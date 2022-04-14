@@ -5,25 +5,24 @@ const generate_circles_positions = (dimensions, layers=6, circles_per_layer=14, 
     const layers_gap = 1 * circle_radius
     const min_radius = (w - (2 * layers * 2 * circle_radius) - (2 * (layers - 1) * layers_gap)) / 2
 
-    let circles = []
+    const circles = []
     // iterate over desired layers
     for(let i=1; i<=layers; i++) {
         // current layer radius = initial radius + past layers circle diameter + past gaps + current layer circle radius
-        let radius = min_radius + ((i-1) * 2 * circle_radius) + ((i-1) * layers_gap) + circle_radius
+        const radius = min_radius + ((i-1) * 2 * circle_radius) + ((i-1) * layers_gap) + circle_radius
 
         for(let c=0; c<circles_per_layer; c++) {
-            let circle={} // cx, cy, r
-            let gap_angle = Math.PI / (circles_per_layer - 1)
-            let circle_angle = c * gap_angle
-            let cy =  center.y - Math.sin(circle_angle) * radius
-            let cx = center.x + Math.cos(circle_angle) * radius
+            const circle={} // cx, cy, r
+            const gap_angle = Math.PI / (circles_per_layer - 1)
+            const circle_angle = c * gap_angle
+            const cy =  center.y - Math.sin(circle_angle) * radius
+            const cx = center.x + Math.cos(circle_angle) * radius
             circle['cx'] = cx
             circle['cy'] = cy
             circle['r'] = circle_radius
             circles.push(circle)
         }
     }
-
     return circles
 }
 
