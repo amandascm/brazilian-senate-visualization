@@ -12,10 +12,22 @@ function get_circles_positions(dimensions, layers=6, circles_per_layer=14, circl
     const gap_angle = Math.PI / (circles_per_layer - 1)
 
     const circles = []
-    // iterate over desired layers
+    let counter = 0
+    // iterate over circles
     for(let c=0; c<circles_per_layer; c++) {
         const circle_angle = c * gap_angle
-        for(let l=1; l<=layers; l++) {
+        // alternate iterations over layer: start by min_radius and start by max_radius
+        let update_l = (l) => l+1
+        let l = 1
+        let end_l = layers + 1
+        if(counter % 2 == 0) {
+            l = layers
+            end_l = 0
+            update_l = (l) => l-1
+        }
+        counter++
+        // iterate over layers
+        while(l != end_l) {
             const layer_radius = min_radius + ((l-1) * 2 * circle_radius) + ((l-1) * layers_gap) + circle_radius
             const circle={} // cx, cy, r
             const cy =  center.y - Math.sin(circle_angle) * layer_radius
@@ -24,6 +36,7 @@ function get_circles_positions(dimensions, layers=6, circles_per_layer=14, circl
             circle['cy'] = cy
             circle['r'] = circle_radius
             circles.push(circle)
+            l = update_l(l)
         }
     }
     return circles
@@ -88,6 +101,7 @@ async function set_circles() {
     const political_parties_senators = await get_data()
     const party_color = get_colors(Object.keys(political_parties_senators))
     const svg = get_svg()
+    // set existing data corresponding circles
     svg.selectAll('circle')
         .data(Object.values(political_parties_senators).flat())
         .enter()
@@ -95,6 +109,15 @@ async function set_circles() {
         .style('fill', d => {
             return party_color(d.senator_party)
         })
+        .attr('cx', (_,i) => circles[i].cx)
+        .attr('cy', (_,i) => circles[i].cy)
+        .attr('r', (_,i) => circles[i].r)
+    // set non-used circles
+    svg.selectAll('circle')
+        .data(circles)
+        .enter()
+        .append('circle')
+        .style('fill',"#DBDBDB")
         .attr('cx', (_,i) => circles[i].cx)
         .attr('cy', (_,i) => circles[i].cy)
         .attr('r', (_,i) => circles[i].r)
