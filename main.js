@@ -1,4 +1,9 @@
-const generate_circles_positions = (dimensions, layers=6, circles_per_layer=14, circle_radius=8, total_circles=81) => {
+// global objects
+const svg_dimensions = [0,0,500,300]
+const circles = get_circles_positions(dimensions=svg_dimensions)
+
+// functions
+function get_circles_positions(dimensions, layers=6, circles_per_layer=14, circle_radius=8) {
     const [x, y, w, h] = dimensions
     const center = {'x': (x + w/2),
                     'y': (y + h - circle_radius)}
@@ -24,33 +29,71 @@ const generate_circles_positions = (dimensions, layers=6, circles_per_layer=14, 
     return circles
 }
 
-const main = () => {
-    const svg_dimensions = [0,0,500,300]
-    const circles = generate_circles_positions(dimensions=svg_dimensions)
-
-    const svg = d3.select("body")
-                    .append("svg")
-                    .attr("width", svg_dimensions[2])
-                    .attr("height", svg_dimensions[3])
-                    .attr("x", svg_dimensions[0])
-                    .attr("y", svg_dimensions[1])
-
-    svg.selectAll("circle")
-        .data(circles)
-        .enter()
-        .append("circle")
-        .attr("cx", (d) => d.cx)
-        .attr("cy", d => d.cy)
-        .attr("r", d => d.r)
-        .style('fill', 'gray')
-    
-    svg.selectAll('text')
-        .data(circles)
-        .enter()
-        .append('text')
-        .attr('x', d => d.cx)
-        .attr('y', d => d.cy)
-        .text((d,i)=> i)
+async function get_data() {
+    const senators_codes_set = {} // maps all unique senators codes
+    const political_parties_senators = {} // keys are unique parties and values are lists os senators index
+    await d3.dsv(';','./lista-parlamentar-em-exercicio.csv', (data) => {
+            const [senator_pic_url, senator_name, senator_party, senator_code] = [
+                data['ListaParlamentarEmExercicio.Parlamentares.Parlamentar.IdentificacaoParlamentar.UrlFotoParlamentar'],
+                data['ListaParlamentarEmExercicio.Parlamentares.Parlamentar.IdentificacaoParlamentar.NomeParlamentar'],
+                data['ListaParlamentarEmExercicio.Parlamentares.Parlamentar.IdentificacaoParlamentar.SiglaPartidoParlamentar'],
+                data['ListaParlamentarEmExercicio.Parlamentares.Parlamentar.IdentificacaoParlamentar.CodigoParlamentar']
+            ]
+            if(
+                senator_pic_url
+                && senator_name
+                && senator_party
+                && senator_code
+                && !senators_codes_set[senator_code]
+            ) {
+                senators_codes_set[senator_code] = true
+                const senator = {
+                    'senator_pic_url': senator_pic_url,
+                    'senator_name': senator_name,
+                    'senator_party': senator_party,
+                    'senator_code': senator_code,
+                }
+                if(!political_parties_senators[senator_party]) political_parties_senators[senator_party] = [senator]
+                else political_parties_senators[senator_party].push(senator)
+            }
+        }
+    )
+    return political_parties_senators
 }
 
+function get_colors(cattegories) {
+    return d3.scaleOrdinal().domain(cattegories).range(d3.schemePaired)
+}
+
+function get_svg() {
+    const svg = d3.select('body')
+                    .append('svg')
+                    .attr('width', svg_dimensions[2])
+                    .attr('height', svg_dimensions[3])
+                    .attr('x', svg_dimensions[0])
+                    .attr('y', svg_dimensions[1])
+    return svg
+}
+
+async function set_circles() {
+    const political_parties_senators = await get_data()
+    const party_color = get_colors(Object.keys(political_parties_senators))
+    const svg = get_svg()
+    svg.selectAll('circle')
+        .data(Object.values(political_parties_senators).flat())
+        .enter()
+        .append('circle')
+        .style('fill', d => {
+            return party_color(d.senator_party)
+        })
+        .attr('cx', (_,i) => circles[i].cx)
+        .attr('cy', (_,i) => circles[i].cy)
+        .attr('r', (_,i) => circles[i].r)
+}
+
+function main() {
+    set_circles()
+}
+
+// main
 main()
