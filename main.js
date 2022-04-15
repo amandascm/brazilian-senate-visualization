@@ -77,63 +77,123 @@ async function get_data() {
 
 function get_colors(cattegories) {
     const colors = [
-        "#005DAA", "#7DC9FF", "#0F0073",
-        "#108B35", "#FFA500", "#FF5460",
-        "#56E85D", "#698EE9", "#C200C6",
-        "#EC008C", "#EC6429", "#379E8D",
-        "#CC0000", "#0080FF",
+        '#005DAA', '#7DC9FF', '#0F0073',
+        '#108B35', '#FFA500', '#FF5460',
+        '#56E85D', '#698EE9', '#C200C6',
+        '#EC008C', '#EC6429', '#379E8D',
+        '#CC0000', '#0080FF',
     ]
     return d3.scaleOrdinal().domain(cattegories).range(
         colors.slice(0,cattegories.length)
     )
 }
 
-function get_svg() {
-    const svg = d3.select('body')
-                    .append('svg')
+function get_svg_div() {
+    const svg_div = d3.select('body')
+        .append('div')
+            .style('display', 'flex')
+            .style('justify-content', 'center')
+            .style('align-items', 'start')
+            .append('div')
+                .attr('id', 'svg_div')
+                .style('display', 'flex')
+                .style('justify-content', 'center')
+                .style('align-items', 'start')
+                .style('padding', '10px')
+                .style('width', `${2 * svg_dimensions[2]}px`)
+                .style('position', 'relative')
+    return svg_div
+}
+
+function set_non_used_circles(svg) {
+    // set non-used circles
+    svg.selectAll('circle')
+        .data(circles)
+        .enter()
+        .append('circle')
+        .style('fill','#DBDBDB')
+        .attr('cx', (_,i) => circles[i].cx)
+        .attr('cy', (_,i) => circles[i].cy)
+        .attr('r', (_,i) => circles[i].r)
+}
+
+function on_circle_click(senator_name, senator_party, senator_pic_url,) {
+    d3.select('#tooltip-div')
+        .html(`<p style='text-align: center; font-family: arial'><span style='font-weight:bold'>Nome: </span><br>${senator_name}<br><span style='font-weight:bold'>Partido: </span><br>${senator_party}</p><img style='width: 150px' src='${senator_pic_url}'></img><br><button onClick='on_tooltip_close()'>Fechar</button>`)
+        .style("visibility", "visible")
+}
+
+function on_tooltip_close() {
+    d3.select('#tooltip-div')
+        .style("visibility", "hidden")
+}
+
+async function set_visualization() {
+    const political_parties_senators = await get_data()
+    const party_color = get_colors(Object.keys(political_parties_senators))
+    const svg_div = get_svg_div()
+    const senators = Object.values(political_parties_senators).flat()
+
+    //svg
+    const svg = svg_div.append('svg')
                     .attr('width', svg_dimensions[2])
                     .attr('height', svg_dimensions[3])
                     .attr('x', svg_dimensions[0])
                     .attr('y', svg_dimensions[1])
-    return svg
-}
-
-async function set_circles() {
-    const political_parties_senators = await get_data()
-    const party_color = get_colors(Object.keys(political_parties_senators))
-    const svg = get_svg()
+    
     // set existing data corresponding circles
     svg.selectAll('circle')
-        .data(Object.values(political_parties_senators).flat())
+        .data(senators)
         .enter()
         .append('circle')
+        .attr('id', d => d.senator_code)
         .style('fill', d => {
             return party_color(d.senator_party)
         })
         .attr('cx', (_,i) => circles[i].cx)
         .attr('cy', (_,i) => circles[i].cy)
         .attr('r', (_,i) => circles[i].r)
-    svg.append("text")
-        .text(Object.values(political_parties_senators).flat().length)
-        .style("font-size", "90px")
-        .style("font-weight", "bold")
-        .attr("x", svg_dimensions[2]/2)
-        .attr("y", svg_dimensions[1]+svg_dimensions[3])
-        .attr("text-anchor", "middle")
-        .attr("alignment-baseline", "baseline")
-    // set non-used circles
-    svg.selectAll('circle')
-        .data(circles)
-        .enter()
-        .append('circle')
-        .style('fill',"#DBDBDB")
-        .attr('cx', (_,i) => circles[i].cx)
-        .attr('cy', (_,i) => circles[i].cy)
-        .attr('r', (_,i) => circles[i].r)
+        .on('mouseover', function () {
+            d3.select(this)
+            .style('stroke-width', 3)
+            .style('stroke', 'black')
+        })
+        .on('mouseout', function () {
+            d3.select(this)
+            .style('stroke-width', 0)
+        })
+        .attr('onclick', (d) => `on_circle_click('${d.senator_name}','${d.senator_party}','${d.senator_pic_url}')`)
+    
+    svg.append('text')
+        .text(senators.length)
+        .style('font-size', '90px')
+        .style('font-weight', 'bold')
+        .style('font-family', 'arial')
+        .attr('x', svg_dimensions[2]/2)
+        .attr('y', svg_dimensions[1]+svg_dimensions[3])
+        .attr('text-anchor', 'middle')
+        .attr('alignment-baseline', 'baseline')
+    set_non_used_circles(svg)
+
+    // tooltip
+    svg_div.append('div')
+            .attr('id', 'tooltip-div')
+            .style('display', 'flex')
+            .style('flex-direction', 'column')
+            .style('justify-content', 'center')
+            .style('align-items', 'center')
+            .style("position", "absolute")
+            .style("right", "0px")
+            .style("visibility", "hidden")
+            .style("background-color", "white")
+            .style("border", "solid")
+            .style("border-width", "1px")
+            .style("border-radius", "5px")
+            .style("padding", "10px")
 }
 
 function main() {
-    set_circles()
+    set_visualization()
 }
 
 // main
