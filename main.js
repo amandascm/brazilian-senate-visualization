@@ -62,7 +62,16 @@ async function get_data() {
 }
 
 function get_colors(cattegories) {
-    return d3.scaleOrdinal().domain(cattegories).range(d3.schemePaired)
+    const colors = [
+        "#005DAA", "#7DC9FF", "#0F0073",
+        "#108B35", "#FFA500", "#FF5460",
+        "#56E85D", "#698EE9", "#C200C6",
+        "#EC008C", "#EC6429", "#379E8D",
+        "#CC0000", "#0080FF",
+    ]
+    return d3.scaleOrdinal().domain(cattegories).range(
+        colors.slice(0,cattegories.length)
+    )
 }
 
 function get_svg() {
