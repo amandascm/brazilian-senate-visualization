@@ -1,12 +1,12 @@
 // global objects
-const svg_dimensions = [0,0,500,300]
+const svg_dimensions = [0,0,700,380]
 const [circles, number_loc] = get_circles_positions(dimensions=svg_dimensions)
 
 // functions
-function get_circles_positions(dimensions, layers=6, circles_per_layer=14, circle_radius=8) {
+function get_circles_positions(dimensions, layers=6, circles_per_layer=14, circle_radius=13) {
     const [x, y, w, h] = dimensions
     const center = {'x': (x + w/2),
-                    'y': (y + h - circle_radius)}
+                    'y': (y + h - 2*circle_radius)}
     const layers_gap = 1 * circle_radius
     const min_radius = (w - (2 * layers * 2 * circle_radius) - (2 * (layers - 1) * layers_gap)) / 2
     const gap_angle = Math.PI / (circles_per_layer - 1)
@@ -100,7 +100,7 @@ function get_svg_div() {
                 .style('justify-content', 'center')
                 .style('align-items', 'center')
                 .style('padding', '10px')
-                .style('width', `${2 * svg_dimensions[2]}px`)
+                .style('width', `${1.5 * svg_dimensions[2]}px`)
                 .style('position', 'relative')
     return svg_div
 }
